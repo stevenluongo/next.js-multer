@@ -5,7 +5,6 @@ export default function Home() {
   const [tempFile, setTempFile] = useState(null);
 
   const handleClick = async() => {
-    console.log(tempFile)
     const formData = new FormData();
     formData.append("image", tempFile);
 

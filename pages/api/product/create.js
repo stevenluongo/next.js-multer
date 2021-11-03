@@ -1,38 +1,30 @@
 import nextConnect from "next-connect";
-import multer from "multer";
-const cloudinary = require('cloudinary').v2
-const path = require('path');
-const DatauriParser = require('datauri/parser');
-const parser = new DatauriParser();
+import cloudinary from "cloudinary";
+import { uploadFile, formatBufferTo64 } from "../../../utils/multer";
 
-cloudinary.config({
+cloudinary.v2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const formatBufferTo64 = file =>
-  parser.format(path.extname(file.originalname).toString(), file.buffer)
-
-const storage = multer.memoryStorage();
-
-const imageFilter = function (req, file, cb) {
-    if (!file.originalname.match(/.(jpg|jpeg|png|gif)$/i)) {
-        return cb(new Error("Only image files are allowed"), false);
-    }
-    cb(null, true);
-}
-
-const uploadFile = multer({ storage: storage, fileFilter: imageFilter, limits: {fileSize: 1000000} }).single("image");
-
 const handler = 
     nextConnect()
     .use(uploadFile)
     .post(async(req, res) => {
-        const file64 = formatBufferTo64(req.file);
-        const { secure_url : image } = await cloudinary.uploader.upload(file64.content, {folder: 'surf-district'});
-        console.log(image);
-        res.json({msg: "create route"})
+        if(!req.file) {
+            res.json({msg: "You must upload a file !", error: true})
+            return;
+        }
+        try {
+            const file64 = formatBufferTo64(req.file);
+            const { secure_url : image } = await cloudinary.v2.uploader.upload(file64.content, {folder: 'surf-district'});
+            res.json({msg: "Image successfully uploaded !", url: image, error: false})
+        } catch (err) {
+            if(err) throw new Error(err);
+            console.log(err)
+            res.status(500).json({msg: "something went wrong :/", error: true})
+        }
 });
 
 export default handler;
