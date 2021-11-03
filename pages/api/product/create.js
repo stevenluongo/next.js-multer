@@ -29,7 +29,16 @@ const handler =
     nextConnect()
     .use(uploadFile)
     .post(async(req, res) => {
+        const file64 = formatBufferTo64(req.file);
+        const { secure_url : image } = await cloudinary.uploader.upload(file64.content, {folder: 'surf-district'});
+        console.log(image);
         res.json({msg: "create route"})
 });
 
 export default handler;
+
+export const config = {
+    api: {
+      bodyParser: false, // Disallow body parsing, consume as stream
+    },
+}; 
